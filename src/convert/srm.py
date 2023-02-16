@@ -1,62 +1,66 @@
-# TODO: Read paper and implement real function: https://www.isihome.ir/freearticle/ISIHome.ir-26078.pdf
 import cv2
 import numpy as np
-from scipy import signal
+from scipy.signal import convolve2d
 
 
-def srm_encode(img: np.ndarray, message: str, alpha: float = 0.1, w: int = 3) -> np.ndarray:
+def convert_to_srm(image: np.ndarray) -> np.ndarray:
     """
-    Embeds a secret message into an image using Steganalysis Rich Models (SRM).
+    Applies Steganalysis Rich Models (SRM) to an image to extract features that can be used to filter for hidden data.
 
-    Parameters:
-    img: The input image as a numpy array.
-    message: The secret message to be embedded into the image.
-    alpha: The strength of the embedding. Default is 0.1.
-    w: The window size for the feature extraction. Default is 3.
+    Args:
+        image: A NumPy array representing an image to be processed.
 
     Returns:
-    The encoded image as a numpy array.
+        A NumPy array representing the processed image.
     """
+    # Split the image into separate color channels
+    blue_channel, green_channel, red_channel = cv2.split(image)
 
-    # Convert message to binary
-    bits = np.unpackbits(np.array([ord(c) for c in message], dtype=np.uint8))
+    # Define the three 5x5 kernels
+    kernel_blue = np.multiply(1.0 / 2, np.array([[0, 0, 0, 0, 0],
+                                                 [0, 0, 0, 0, 0],
+                                                 [0, 1, -2, 1, 0],
+                                                 [0, 0, 0, 0, 0],
+                                                 [0, 0, 0, 0, 0]], dtype=np.float32))
+    kernel_green = np.multiply(1.0 / 12, np.array([[-1, 2, -2, 2, -1],
+                                                   [2, -6, 8, -6, 2],
+                                                   [-2, 8, -12, 8, -2],
+                                                   [2, -6, 8, -6, 2],
+                                                   [-1, 2, -2, 2, -1]], dtype=np.float32))
+    kernel_red = np.multiply(1.0 / 4, np.array([[0, 0, 0, 0, 0],
+                                                [0, -1, 2, -1, 0],
+                                                [0, 2, -4, 2, 0],
+                                                [0, -1, 2, -1, 0],
+                                                [0, 0, 0, 0, 0]], dtype=np.float32))
 
-    # Extract features from image
-    x = img.astype(float)
-    m, n, c = x.shape
-    features = np.zeros((m - w + 1, n - w + 1, w ** 2))
-    for i in range(w):
-        for j in range(w):
-            patch = x[i:m - w + i + 1, j:n - w + j + 1]
-            features[:, :, i * w + j] = signal.convolve2d(patch, np.ones((w, w)), mode='valid')
+    # Apply the kernels to each color channel separately
+    filtered_blue = convolve2d(blue_channel, kernel_blue, mode='same')
+    filtered_green = convolve2d(green_channel, kernel_green, mode='same')
+    filtered_red = convolve2d(red_channel, kernel_red, mode='same')
 
-    # Embed message into features
-    alpha *= np.std(features)
-    for i, bit in enumerate(bits):
-        features[:, :, i] += alpha * bit
+    # Clip the values to a valid range and convert to an 8-bit unsigned integer
+    filtered_blue = np.clip(np.multiply(255.0, filtered_blue, dtype=np.float32), 0, 255).astype(np.uint8)
+    filtered_green = np.clip(np.multiply(255.0, filtered_green, dtype=np.float32), 0, 255).astype(np.uint8)
+    filtered_red = np.clip(np.multiply(255.0, filtered_red, dtype=np.float32), 0, 255).astype(np.uint8)
 
-    # Synthesize image from features
-    y = np.zeros((m, n))
-    for i in range(w):
-        for j in range(w):
-            y[i:m - w + i + 1, j:n - w + j + 1] += features[:, :, i * w + j]
+    # Merge the filtered color channels back into a single image
+    filtered_image = cv2.merge((filtered_red, filtered_green, filtered_blue))
 
-    # Normalize and clip image values
-    y -= np.min(y)
-    y /= np.max(y)
-    y *= 255
-    y = np.clip(np.round(y), 0, 255)
+    # Convert the image to grayscale
+    filtered_image = cv2.cvtColor(filtered_image, cv2.COLOR_RGB2GRAY)
 
-    return y.astype(np.uint8)
+    return filtered_image
 
 
 if __name__ == "__main__":
-    image_path = "/home/misa/Workspace/Company/Research/Image_Processing/data/raw/id_card/12_frontside_19_real.jpg"
+    # Load an example image
+    image_path = "/home/misa/Workspace/Company/Research/Image_Processing/data/raw/id_card/12_frontside_15_screen.jpg"
+    input_image = cv2.imread(image_path)
 
-    image = cv2.imread(image_path)
+    # Apply the custom filter to the image using the combined kernel
+    output_filtered_image = convert_to_srm(input_image)
 
-    srm_output = srm_encode(image, "What")
+    # cv2.imshow("New", cv2.cvtColor(filtered_image, cv2.COLOR_RGB2BGR))
+    cv2.imshow("New", output_filtered_image)
 
-    cv2.imshow("Original", image)
-    cv2.imshow("SRM", srm_output)
     cv2.waitKey()

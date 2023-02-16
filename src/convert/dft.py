@@ -2,12 +2,12 @@ import cv2
 import numpy as np
 
 
-def convert_to_dft(input_image: np.ndarray) -> np.ndarray:
+def convert_to_dft(image: np.ndarray) -> np.ndarray:
     """
     Computes the magnitude spectrum of an input image using the Discrete Fourier Transform.
 
     Args:
-        input_image: A 2D or 3D NumPy array representing the input image in BGR format.
+        image: A 2D or 3D NumPy array representing the input image in BGR format.
 
     Returns:
         A 2D NumPy array representing the magnitude spectrum of the input image.
@@ -16,14 +16,14 @@ def convert_to_dft(input_image: np.ndarray) -> np.ndarray:
         ValueError: If the input image is not a 2D or 3D NumPy array.
     """
 
-    if len(input_image.shape) not in (2, 3):
+    if len(image.shape) not in (2, 3):
         raise ValueError("Input image must be a 2D or 3D NumPy array")
 
     # Convert input image to grayscale
-    if len(input_image.shape) == 3:
-        gray_image = cv2.cvtColor(input_image, cv2.COLOR_BGR2GRAY)
+    if len(image.shape) == 3:
+        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     else:
-        gray_image = input_image
+        gray_image = image
 
     # Compute the 2D DFT of the input image
     dft = np.fft.fft2(gray_image)
@@ -43,10 +43,10 @@ def convert_to_dft(input_image: np.ndarray) -> np.ndarray:
 if __name__ == "__main__":
     image_path = "/home/misa/Workspace/Company/Research/Image_Processing/data/raw/id_card/12_frontside_19_real.jpg"
 
-    image = cv2.imread(image_path)
+    input_image = cv2.imread(image_path)
 
-    dft_output = convert_to_dft(image)
+    dft_output = convert_to_dft(input_image)
 
-    cv2.imshow("Original", image)
+    cv2.imshow("Original", input_image)
     cv2.imshow("DFT", dft_output)
     cv2.waitKey()

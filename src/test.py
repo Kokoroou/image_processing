@@ -1,6 +1,7 @@
 import cv2
 
-from utils import *
+from utils import build_histogram
+from enhance.enhance_contrast import enhance_contrast
 from constants import DATA_DIR
 
 

@@ -8,12 +8,12 @@ def convert_to_ela(image: np.ndarray, quality: int = 70) -> np.ndarray:
     """
     Convert a given color image to its Error Level Analysis (ELA).
 
-    Parameters:
-    image (np.ndarray): A NumPy array representing a color image.
-    quality (int): The quality level to use when saving the image for ELA. Defaults to 90.
+    Args:
+        image: A NumPy array representing a color image.
+        quality: The quality level to use when saving the image for ELA. Defaults to 90.
 
     Returns:
-    np.ndarray: A NumPy array representing the ELA image.
+        A NumPy array representing the ELA image.
     """
 
     # Save image array to a temporary file at a given quality level
@@ -48,10 +48,10 @@ def convert_to_ela(image: np.ndarray, quality: int = 70) -> np.ndarray:
 if __name__ == "__main__":
     image_path = "/home/misa/Workspace/Company/Research/Image_Processing/data/raw/id_card/12_frontside_19_real.jpg"
 
-    image = cv2.imread(image_path)
+    input_image = cv2.imread(image_path)
 
-    ela_output = convert_to_ela(image, 70)
+    ela_output = convert_to_ela(input_image, 70)
 
-    cv2.imshow("Original", image)
+    cv2.imshow("Original", input_image)
     cv2.imshow("ELA", ela_output)
     cv2.waitKey()
